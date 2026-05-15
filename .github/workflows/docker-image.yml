@@ -100,23 +100,22 @@ jobs:
 
       - name: Generate ENV
         run: |
-          cp .env.template .env.production
+          cp .env.template .env
 
-          sed -i "s|{{APP_NAME}}|${{ vars.APP_NAME }}|g" .env.production
-          sed -i "s|{{APP_ENV}}|${{ vars.APP_ENV }}|g" .env.production
-          sed -i "s|{{APP_KEY}}|${{ secrets.APP_KEY }}|g" .env.production
-          sed -i "s|{{APP_DEBUG}}|${{ vars.APP_DEBUG }}|g" .env.production
-          sed -i "s|{{APP_URL}}|${{ vars.APP_URL }}|g" .env.production
-
-          sed -i "s|{{DB_CONNECTION}}|${{ vars.DB_CONNECTION }}|g" .env.production
-          sed -i "s|{{DB_HOST}}|${{ secrets.DB_HOST }}|g" .env.production
-          sed -i "s|{{DB_PORT}}|${{ secrets.DB_PORT }}|g" .env.production
-          sed -i "s|{{DB_DATABASE}}|${{ secrets.DB_DATABASE }}|g" .env.production
-          sed -i "s|{{DB_USERNAME}}|${{ secrets.DB_USERNAME }}|g" .env.production
-          sed -i "s|{{DB_PASSWORD}}|${{ secrets.DB_PASSWORD }}|g" .env.production
+          sed -i -r 's/APP_NAME\=(.*)/APP_NAME="${{ vars.APP_NAME }}"/g' .env
+          sed -i -r 's/APP_ENV\=(.*)/APP_ENV="${{ vars.APP_ENV }}"/g' .env
+          sed -i -r 's/APP_KEY\=(.*)/APP_KEY="${{ secrets.APP_KEY }}"/g' .env
+          sed -i -r 's/APP_DEBUG\=(.*)/APP_DEBUG="${{ vars.APP_DEBUG }}"/g' .env
+          sed -i -r 's/APP_URL\=(.*)/APP_URL="${{ vars.APP_URL }}"/g' .env
+          sed -i -r 's/DB_CONNECTION\=(.*)/DB_CONNECTION="${{ vars.DB_CONNECTION }}"/g' .env
+          sed -i -r 's/DB_HOST\=(.*)/DB_HOST="${{ secrets.DB_HOST }}"/g' .env
+          sed -i -r 's/DB_PORT\=(.*)/DB_PORT="${{ secrets.DB_PORT }}"/g' .env
+          sed -i -r 's/DB_DATABASE\=(.*)/DB_DATABASE="${{ secrets.DB_DATABASE }}"/g' .env
+          sed -i -r 's/DB_USERNAME\=(.*)/DB_USERNAME="${{ secrets.DB_USERNAME }}"/g' .env
+          sed -i -r 's/DB_PASSWORD\=(.*)/DB_PASSWORD="${{ secrets.DB_PASSWORD }}"/g' .env
 
           echo "===== GENERATED ENV ====="
-          cat .env.production
+          cat .env
       
       - name: Docker Login
         run: | 
@@ -128,7 +127,7 @@ jobs:
         run: | 
           mkdir -p ~/apps/laravel-app 
           cp docker-compose.yml ~/apps/laravel-app/ 
-          cp .env.production ~/apps/laravel-app/
+          cp .env ~/apps/laravel-app/
 
       - name: Set Variables Deploy
         run: |

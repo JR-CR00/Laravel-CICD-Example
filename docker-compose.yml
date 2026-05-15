@@ -16,7 +16,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./data/storage:/var/www/html/storage
-      - ./.env.production:/var/www/html/.env
+      - ./.env:/var/www/html/.env
     expose:
       - "9000"
     restart: unless-stopped
