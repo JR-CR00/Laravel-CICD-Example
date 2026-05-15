@@ -23,4 +23,11 @@ services:
     restart: unless-stopped
     env_file: 
       - .env
+    networks:
+      - proxy-network
+      
+networks:
+  proxy-network:
+    name: proxy-network
+    driver: bridge
     
