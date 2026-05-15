@@ -31,7 +31,7 @@ jobs:
     - name: Set Keys
       run: |
         echo "NEW_VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
-        echo "DOCKER_CONTAINER=${{ vars.DOCKER_CONTAINER }}" >> $GITHUB_ENV 
+        echo "DOCKER_CONTAINER=${{ secrets.DOCKER_CONTAINER }}" >> $GITHUB_ENV 
 
     - name: Docker Login
       env:
