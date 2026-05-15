@@ -122,30 +122,32 @@ jobs:
           mkdir -p ~/apps/laravel-app 
           cp docker-compose.yml ~/apps/laravel-app/ 
           cp .env.production ~/apps/laravel-app/
+
+      - name: Set Variables Deploy
+        run: |
+          echo "NEW_VERSION=${{ needs.build-image.outputs.NEW_VERSION }}" >> $GITHUB_ENV
+          echo "DOCKER_CONTAINER=${{ secrets.DOCKER_CONTAINER }}" >> $GITHUB_ENV
       
       - name: Deploy containers 
-        env: 
-          DOCKER_CONTAINER: ${{ secrets.DOCKER_CONTAINER }} 
-          NEW_VERSION: ${{ needs.build-image.outputs.NEW_VERSION }}
         run: | 
           cd ~/apps/laravel-app
-          docker pull ${{ secrets.DOCKER_CONTAINER }}:${{ needs.build-image.outputs.NEW_VERSION }}
+          docker pull "$DOCKER_CONTAINER:$NEW_VERSION"
           docker compose down && docker compose up -d
 
       - name: Laravel Optimize 
         run: |
-          docker compose exec -T app php artisan optimize
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan optimize
 
       - name: Run Migrations 
         run: | 
-          docker compose exec -T app php artisan migrate --force  
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan migrate --force  
 
       - name: Clear Cache 
         run: | 
-          docker compose exec -T app php artisan cache:clear && \
-          docker compose exec -T app php artisan config:clear && \
-          docker compose exec -T app php artisan route:clear && \
-          docker compose exec -T app php artisan view:clear
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan cache:clear && \
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan config:clear && \
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan route:clear && \
+          docker compose exec -T "$DOCKER_CONTAINER:$NEW_VERSION" php artisan view:clear
 
       - name: Docker Logout
         run: docker logout
