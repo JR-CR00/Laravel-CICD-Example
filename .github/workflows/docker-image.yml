@@ -117,15 +117,19 @@ jobs:
           -u "${{ secrets.DOCKER_USER }}" \
           --password-stdin
 
-      - name: Pull latest image 
+      - name: Copy deployment files 
         run: | 
-          docker pull ${{ secrets.DOCKER_CONTAINER }}:${{ needs.build-image.outputs.NEW_VERSION }}
-
+          mkdir -p ~/apps/laravel-app 
+          cp docker-compose.yml ~/apps/laravel-app/ 
+          cp .env.production ~/apps/laravel-app/
+      
       - name: Deploy containers 
         env: 
           DOCKER_CONTAINER: ${{ secrets.DOCKER_CONTAINER }} 
           NEW_VERSION: ${{ needs.build-image.outputs.NEW_VERSION }}
         run: | 
+          cd ~/apps/laravel-app
+          docker pull ${{ secrets.DOCKER_CONTAINER }}:${{ needs.build-image.outputs.NEW_VERSION }}
           docker compose down && docker compose up -d
 
       - name: Laravel Optimize 
