@@ -99,21 +99,38 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate ENV
+      env:
+        APP_NAME: ${{ vars.APP_NAME }}
+        APP_ENV: ${{ vars.APP_ENV }}
+        APP_DEBUG: ${{ vars.APP_DEBUG }}
+        APP_URL: ${{ vars.APP_URL }}
+
+        APP_KEY: ${{ secrets.APP_KEY }}
+
+        DB_CONNECTION: ${{ vars.DB_CONNECTION }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_DATABASE: ${{ secrets.DB_DATABASE }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
         run: |
           cp .env.template .env
 
-          sed -i -r 's|APP_NAME=(.*)|APP_NAME="laravel-docker"|g' .env
-          sed -i -r 's|APP_ENV=(.*)|APP_ENV="prod"|g' .env
-          sed -i -r 's|APP_KEY=(.*)|APP_KEY="***"|g' .env
-          sed -i -r 's|APP_DEBUG=(.*)|APP_DEBUG=false|g' .env
-          sed -i -r 's|APP_URL=(.*)|APP_URL="http://localhost"|g' .env
+          sed -i "s|{{APP_NAME}}|$APP_NAME|g" .env
+          sed -i "s|{{APP_ENV}}|$APP_ENV|g" .env
+          sed -i "s|{{APP_KEY}}|$APP_KEY|g" .env
+          sed -i "s|{{APP_DEBUG}}|$APP_DEBUG|g" .env
+          sed -i "s|{{APP_URL}}|$APP_URL|g" .env
 
-          sed -i -r 's|DB_CONNECTION=(.*)|DB_CONNECTION="pgsql"|g' .env
-          sed -i -r 's|DB_HOST=(.*)|DB_HOST="***"|g' .env
-          sed -i -r 's|DB_PORT=(.*)|DB_PORT="5432"|g' .env
-          sed -i -r 's|DB_DATABASE=(.*)|DB_DATABASE="***"|g' .env
-          sed -i -r 's|DB_USERNAME=(.*)|DB_USERNAME="***"|g' .env
-          sed -i -r 's|DB_PASSWORD=(.*)|DB_PASSWORD="***"|g' .env
+          sed -i "s|{{DB_CONNECTION}}|$DB_CONNECTION|g" .env
+          sed -i "s|{{DB_HOST}}|$DB_HOST|g" .env
+          sed -i "s|{{DB_PORT}}|$DB_PORT|g" .env
+          sed -i "s|{{DB_DATABASE}}|$DB_DATABASE|g" .env
+          sed -i "s|{{DB_USERNAME}}|$DB_USERNAME|g" .env
+          sed -i "s|{{DB_PASSWORD}}|$DB_PASSWORD|g" .env
+
+          echo "===== ENV GENERATED ====="
       
       - name: Docker Login
         run: | 
