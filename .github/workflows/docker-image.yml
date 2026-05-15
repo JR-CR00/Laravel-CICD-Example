@@ -1,83 +1,134 @@
-name: Docker Image CI
+name: Laravel CI/CD
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
 
   tests:
-    name: Run tests
+    name: Run Tests
     runs-on: ubuntu-latest
+
+    env:
+      APP_ENV: testing
+
+  
     steps:
-      - uses: actions/checkout@v4
- 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: postgresql-dev, libzip-dev, zip, unzip, curl, pdo, pdo_pgsql, bcmath, opcache
+          php-version: 8.4
+          extensions: pdo_pgsql, zip, bcmath, opcache
           coverage: none
- 
-      - name: Run composer install
-        run: composer install -n --prefer-dist
- 
-      - name: Prepare Laravel Application
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare Laravel
         run: |
           cp .env.example .env
           php artisan key:generate
- 
-      - name: Run tests
-        run: php artisan test
-        
-  build:
 
+      - name: Run Tests
+        run: php artisan test
+
+  build-image:
+    name: Build & Push Docker Image
+    needs: tests
     runs-on: ubuntu-latest
+    outputs:
+      NEW_VERSION: ${{ steps.version.outputs.version }}
+
+    env:
+      DOCKER_BUILDKIT: 1
+
+    if: github.event_name == 'push'
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Git Semantic Version
-      uses: paulhatch/semantic-version@v5.4.0  
-      with:
-        tag_prefix: "v"
-        major_pattern: "major:"
-        minor_pattern: "feat:"
-        version_format: "${major}.${minor}.${patch}-prerelease${increment}"  
-        bump_each_commit: true
-      id: version
+      - name: Generate Version
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "major:"
+          minor_pattern: "feat:"
 
-    - name: Set Keys
-      run: |
-        echo "NEW_VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
-        echo "DOCKER_CONTAINER=${{ secrets.DOCKER_CONTAINER }}" >> $GITHUB_ENV 
+      - name: Set Variables
+        run: |
+          echo "NEW_VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
+          echo "DOCKER_CONTAINER=${{ secrets.DOCKER_CONTAINER }}" >> $GITHUB_ENV
 
-    - name: Docker Login
-      env:
-        DOCKER_USER: ${{ secrets.DOCKER_USER }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      run: |
-        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - name: Docker Login
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+          -u "${{ secrets.DOCKER_USER }}" \
+          --password-stdin
 
-    - name: Docker Build Image
-      run: |
-        docker build -t "$DOCKER_CONTAINER:$NEW_VERSION" .
-        docker build -t "$DOCKER_CONTAINER:latest" .
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t "$DOCKER_CONTAINER:$NEW_VERSION" \
+            -t "$DOCKER_CONTAINER:latest" .
 
-    - name: Docker Push
-      run: |
-        docker push "$DOCKER_CONTAINER:$NEW_VERSION"
-        docker push "$DOCKER_CONTAINER:latest"
+      - name: Push Docker Image
+        run: |
+          docker push "$DOCKER_CONTAINER:$NEW_VERSION"
+          docker push "$DOCKER_CONTAINER:latest"
 
-    - name: Docker LogOut
-      run: |
-        docker logout
+      - name: Docker Logout
+        run: docker logout
+  deploy:
+    needs: build-image
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate ENV
+        env: 
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }} 
+          DB_HOST: ${{ secrets.DB_HOST }} 
+          DB_PORT: ${{ secrets.DB_PORT }} 
+          DB_DATABASE: ${{ secrets.DB_DATABASE }} 
+          DB_USERNAME: ${{ secrets.DB_USERNAME }} 
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         
-        
+        run: | 
+          envsubst < .env.template > .env.production
       
-        
+      - name: Docker Login
+        run: | 
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+          -u "${{ secrets.DOCKER_USER }}" \
+          --password-stdin
+
+      - name: Pull latest image 
+          run: | docker pull ${{ secrets.DOCKER_CONTAINER }}:${{ needs.build-image.outputs.NEW_VERSION }}
+
+      - name: Deploy containers 
+        env: 
+          DOCKER_CONTAINER: ${{ secrets.DOCKER_CONTAINER }} 
+          NEW_VERSION: ${{ needs.build-image.outputs.NEW_VERSION }}
+        run: | 
+          docker compose down docker compose up -d
+
+      - name: Laravel Optimize 
+          run: | docker compose exec -T app php artisan optimize
+
+      - name: Run Migrations 
+          run: | docker compose exec -T app php artisan migrate --force  

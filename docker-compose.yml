@@ -1,7 +1,7 @@
 services:
   app:
     container_name: laravel_app
-    image: jrvargas/laravel-docker:latest
+    image: $DOCKER_CONTAINER:$NEW_VERSION
     environment:
       APP_NAME: ${APP_NAME}
       APP_ENV: ${APP_ENV}
@@ -16,7 +16,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./data/storage:/var/www/html/storage
-    ports:
-      - "9000:9000"
+    expose:
+      - "9000"
     restart: unless-stopped
+    env_file: 
+      - .env.production
     
