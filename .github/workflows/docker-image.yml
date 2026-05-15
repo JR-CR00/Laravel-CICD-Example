@@ -92,14 +92,14 @@ jobs:
   deploy:
     needs: build-image
     runs-on: self-hosted
-
+    environment: 
+          name: prod
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Generate ENV
-        environment: 
-          name: prod
+       
         env: 
           DB_CONNECTION: ${{ secrets.DB_CONNECTION }} 
           DB_HOST: ${{ secrets.DB_HOST }} 
