@@ -115,7 +115,7 @@ jobs:
          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         
         run: | 
-          envsubst < .env.example > .env.production
+          envsubst < .env.template > .env.production
 
           echo "===== GENERATED ENV =====" 
           cat .env.production
