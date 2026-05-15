@@ -46,14 +46,12 @@ jobs:
   build-image:
     name: Build & Push Docker Image
     needs: tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       NEW_VERSION: ${{ steps.version.outputs.version }}
 
     env:
       DOCKER_BUILDKIT: 1
-
-    if: github.event_name == 'push'
 
     steps:
       - name: Checkout
@@ -109,7 +107,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         
         run: | 
-          envsubst < .env.template > .env.production
+          envsubst < .env.example > .env.production
       
       - name: Docker Login
         run: | 
