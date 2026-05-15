@@ -1,0 +1,59 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Git Semantic Version
+      uses: paulhatch/semantic-version@v5.4.0  
+      with:
+        tag_prefix: "v"
+        major_pattern: "major:"
+        minor_pattern: "feat:"
+        version_format: "${major}.${minor}.${patch}-prerelease${increment}"  
+        bump_each_commit: true
+      id: version
+
+    - name: Set Keys
+      run: |
+        echo "NEW_VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
+        echo "DOCKER_CONTAINER=${{ vars.DOCKER_CONTAINER }}" >> $GITHUB_ENV 
+
+    - name: Docker Login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+
+    - name: Docker Build Image
+      run: |
+        docker build -t "$DOCKER_CONTAINER:$NEW_VERSION" .
+        docker build -t "$DOCKER_CONTAINER:latest" .
+
+    - name: Docker Push
+      run: |
+        docker push "$DOCKER_CONTAINER:$NEW_VERSION"
+        docker push "$DOCKER_CONTAINER:latest"
+
+    - name: Docker LogOut
+      run: |
+        docker logout
+        
+        
+      
+        
