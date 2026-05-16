@@ -6,21 +6,7 @@ on:
       - main
 
 jobs:
-  setup-env:
-    runs-on: ymt-cr1-github-runner-prod-01
-    outputs:
-      env_setup: ${{ steps.env_config.outputs.env_setup }}
-    steps:
-      - name: Set environment variable
-        id: env_config
-        run: |
-          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            echo "env_setup=prod" >> "$GITHUB_OUTPUT"
-          elif [[ $GITHUB_REF == 'refs/heads/development' ]]; then
-            echo "env_setup=dev" >> "$GITHUB_OUTPUT"
-          else
-            echo "env_setup=unknown" >> "$GITHUB_OUTPUT"
-          fi
+  
 
   tests:
     name: Run Tests
@@ -57,9 +43,25 @@ jobs:
       - name: Run Tests
         run: php artisan test
 
+  setup-env:
+    needs: tests
+    runs-on: ymt-cr1-github-runner-prod-01
+    outputs:
+      env_setup: ${{ steps.env_config.outputs.env_setup }}
+    steps:
+      - name: Set environment variable
+        id: env_config
+        run: |
+          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "env_setup=prod" >> "$GITHUB_OUTPUT"
+          elif [[ $GITHUB_REF == 'refs/heads/development' ]]; then
+            echo "env_setup=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "env_setup=unknown" >> "$GITHUB_OUTPUT"
+          fi
   build-image:
     name: Build & Push Docker Image
-    needs: tests
+    needs: setup-env
     runs-on: self-hosted
     outputs:
       NEW_VERSION: ${{ steps.version.outputs.version }}
