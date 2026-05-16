@@ -19,7 +19,7 @@ RUN docker-php-ext-install \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+WORKDIR /var/www/laravel
 
 COPY . .
 
@@ -39,10 +39,10 @@ RUN apk add --no-cache \
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
-WORKDIR /var/www/html
+WORKDIR /var/www/laravel
 
 # Copiar app ya construida
-COPY --from=builder /var/www/html /var/www/html
+COPY --from=builder /var/www/laravel /var/www/laravel
 
 # Permisos correctos para Laravel
 RUN mkdir -p \
