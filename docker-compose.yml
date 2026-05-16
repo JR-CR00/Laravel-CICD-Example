@@ -31,3 +31,6 @@ networks:
     name: proxy-network
     driver: bridge
     
+volumes:
+  laravel_public:
+  laravel_storage:
