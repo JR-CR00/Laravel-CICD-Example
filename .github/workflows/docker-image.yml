@@ -6,6 +6,21 @@ on:
       - main
 
 jobs:
+  setup-env:
+    runs-on: ymt-cr1-github-runner-prod-01
+    outputs:
+      env_setup: ${{ steps.env_config.outputs.env_setup }}
+    steps:
+      - name: Set environment variable
+        id: env_config
+        run: |
+          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "env_setup=prod" >> "$GITHUB_OUTPUT"
+          elif [[ $GITHUB_REF == 'refs/heads/development' ]]; then
+            echo "env_setup=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "env_setup=unknown" >> "$GITHUB_OUTPUT"
+          fi
 
   tests:
     name: Run Tests
@@ -14,7 +29,6 @@ jobs:
     env:
       APP_ENV: testing
 
-  
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,8 +106,8 @@ jobs:
   deploy:
     needs: build-image
     runs-on: self-hosted
-    environment: 
-          name: prod
+    environment:
+      name: ${{ needs.setup-env.outputs.env_setup }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -159,43 +173,43 @@ jobs:
           EOF
 
           echo "===== ENV GENERATED ====="
-      
+
       - name: Docker Login
-        run: | 
+        run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
           -u "${{ secrets.DOCKER_USER }}" \
           --password-stdin
 
-      - name: Copy deployment files 
-        run: | 
-          mkdir -p ~/apps/laravel-app 
-          cp docker-compose.yml ~/apps/laravel-app/ 
-          cp .env ~/apps/laravel-app/
+      - name: Copy deployment files
+        run: |
+          mkdir -p /apps/laravel-app 
+          cp docker-compose.yml /apps/laravel-app/ 
+          cp .env /apps/laravel-app/
 
       - name: Set Variables Deploy
         run: |
           echo "NEW_VERSION=${{ needs.build-image.outputs.NEW_VERSION }}" >> $GITHUB_ENV
           echo "DOCKER_CONTAINER=${{ secrets.DOCKER_CONTAINER }}" >> $GITHUB_ENV
-      
-      - name: Deploy containers 
-        run: | 
-          cd ~/apps/laravel-app
+
+      - name: Deploy containers
+        run: |
+          cd /apps/laravel-app
           docker pull "$DOCKER_CONTAINER:$NEW_VERSION"
           docker compose down && docker compose up -d
 
-      - name: Laravel Optimize 
+      - name: Laravel Optimize
         run: |
-          cd ~/apps/laravel-app
+          cd /apps/laravel-app
           docker compose exec -T app php artisan optimize
 
-      - name: Run Migrations 
-        run: | 
-          cd ~/apps/laravel-app
-          docker compose exec -T app php artisan migrate --force  
+      - name: Run Migrations
+        run: |
+          cd /apps/laravel-app
+          docker compose exec -T app php artisan migrate --force
 
-      - name: Clear Cache 
-        run: | 
-          cd ~/apps/laravel-app
+      - name: Clear Cache
+        run: |
+          cd /apps/laravel-app
           docker compose exec -T app php artisan cache:clear && \
           docker compose exec -T app php artisan config:clear && \
           docker compose exec -T app php artisan route:clear && \
