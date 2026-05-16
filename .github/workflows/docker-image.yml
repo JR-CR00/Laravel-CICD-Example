@@ -54,7 +54,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == 'main' ]]; then
             echo "env_setup=prod" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == 'development' ]]; then
-            echo "env_setup=dev" >> "$GITHUB_OUTPUT"
+            echo "env_setup=dev" >> "$GITHUB_OUTPUT" 
           else
             echo "env_setup=unknown" >> "$GITHUB_OUTPUT"
           fi
@@ -108,7 +108,7 @@ jobs:
     needs: build-image
     runs-on: self-hosted
     environment:
-      name: ${{ needs.setup-env.outputs.env_setup }}
+      name: "prod"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -128,7 +128,6 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
         run: |
-          echo  environment ${{ needs.setup-env.outputs.env_setup }}
           cp .env.template .env
 
           python3 - <<'EOF'
