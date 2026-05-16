@@ -6,8 +6,6 @@ on:
       - main
 
 jobs:
-  
-
   tests:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -130,6 +128,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
         run: |
+          echo  environment ${{ needs.setup-env.outputs.env_setup }}
           cp .env.template .env
 
           python3 - <<'EOF'
