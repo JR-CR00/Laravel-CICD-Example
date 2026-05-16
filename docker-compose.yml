@@ -15,7 +15,8 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./:/var/www/html
+      - laravel_public:/var/www/html/public
+      - laravel_storage:/var/www/html/storage/app/public
       - ./.env:/var/www/html/.env
     expose:
       - "9000"
