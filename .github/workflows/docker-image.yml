@@ -52,9 +52,10 @@ jobs:
       - name: Set environment variable
         id: env_config
         run: |
-          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+          echo "Current branch: ${{ github.ref_name }}"
+          if [[ "${{ github.ref_name }}" == 'main' ]]; then
             echo "env_setup=prod" >> "$GITHUB_OUTPUT"
-          elif [[ $GITHUB_REF == 'refs/heads/development' ]]; then
+          elif [[ "${{ github.ref_name }}" == 'development' ]]; then
             echo "env_setup=dev" >> "$GITHUB_OUTPUT"
           else
             echo "env_setup=unknown" >> "$GITHUB_OUTPUT"
