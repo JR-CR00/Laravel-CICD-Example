@@ -55,4 +55,4 @@ RUN mkdir -p \
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
+CMD ["sh", "-c", "php artisan storage:link --force && php-fpm"]
