@@ -45,7 +45,7 @@ jobs:
 
   setup-env:
     needs: tests
-    runs-on: ymt-cr1-github-runner-prod-01
+    runs-on: self-hosted
     outputs:
       env_setup: ${{ steps.env_config.outputs.env_setup }}
     steps:
